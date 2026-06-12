@@ -3,4 +3,4 @@
 const os = require('os');
 const realHostname = os.hostname;
 os.hostname = function() { return 'laptop-win11'; };
-console.log('[patch] os.hostname() ->', os.hostname());
+// console.log('[patch] os.hostname() ->', os.hostname());
