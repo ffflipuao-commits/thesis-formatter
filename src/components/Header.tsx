@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 
+const supabase = createClient();
+
 export function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -23,7 +24,6 @@ export function Header() {
     await supabase.auth.signOut();
     setUser(null);
     router.push('/');
-    router.refresh();
   };
 
   return (

@@ -1,6 +1,7 @@
 export type PlanType = 'once' | 'month' | 'year';
 export type SubscriptionStatus = 'active' | 'expired' | 'cancelled';
 export type DocumentStatus = 'processing' | 'done' | 'error';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface UserProfile {
   id: string;
@@ -38,7 +39,7 @@ export interface Payment {
   amount: number;
   plan: PlanType;
   payment_method: string;
-  status: string;
+  status: PaymentStatus;
   transaction_id: string | null;
   created_at: string;
 }
