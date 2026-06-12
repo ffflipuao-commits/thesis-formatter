@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 
@@ -14,7 +13,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +21,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -32,14 +30,26 @@ export function AuthForm({ mode }: AuthFormProps) {
           },
         });
         if (error) throw error;
-        toast.success('注册成功！请查看邮箱确认链接（或已自动登录）');
+
+        // 检查是否需要邮箱确认
+        if (data?.session) {
+          toast.success('注册成功，正在跳转...');
+          window.location.href = '/upload';
+        } else {
+          toast.success('注册成功！请检查邮箱并点击确认链接，然后返回登录。', { duration: 8000 });
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success('登录成功！');
+
+        if (data?.session) {
+          toast.success('登录成功，正在跳转...');
+          // 用 window.location 做硬跳转，确保 cookie 被正确发送
+          window.location.href = '/upload';
+        } else {
+          toast.error('登录状态异常，请重试');
+        }
       }
-      router.push('/dashboard');
-      router.refresh();
     } catch (err: any) {
       toast.error(err.message || '操作失败');
     } finally {
