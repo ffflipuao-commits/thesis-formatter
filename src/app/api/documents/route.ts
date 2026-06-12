@@ -26,12 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  fetch(`${request.nextUrl.origin}/api/format`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ document_id: doc.id, file_path }),
-  }).catch(() => {});
-
+  // 返回文档记录，前端在预览页调用 /api/format 触发实际处理
   return NextResponse.json(doc, { status: 201 });
 }
 

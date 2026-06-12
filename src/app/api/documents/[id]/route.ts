@@ -18,7 +18,22 @@ export async function GET(
 
   if (error || !doc) return NextResponse.json({ error: '文档不存在' }, { status: 404 });
 
-  return NextResponse.json(doc);
+  // 解析 error_message 中的 JSON 数据（previewHtml + checklist）
+  let previewHtml = '';
+  let checklist: any[] = [];
+  if (doc.error_message) {
+    try {
+      const parsed = JSON.parse(doc.error_message);
+      previewHtml = parsed.previewHtml || '';
+      checklist = parsed.checklist || [];
+    } catch {}
+  }
+
+  return NextResponse.json({
+    ...doc,
+    previewHtml,
+    checklist,
+  });
 }
 
 export async function DELETE(
@@ -28,6 +43,18 @@ export async function DELETE(
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: '请先登录' }, { status: 401 });
+
+  // 删除 Storage 中的文件
+  const { data: doc } = await supabase
+    .from('documents')
+    .select('original_file')
+    .eq('id', params.id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (doc?.original_file) {
+    await supabase.storage.from('documents').remove([doc.original_file]);
+  }
 
   const { error } = await supabase
     .from('documents')
