@@ -1,26 +1,51 @@
-import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { getUserVipPermissions } from '@/lib/vip';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, notFound } from 'next/navigation';
+import { AuthGuard } from '@/components/AuthGuard';
 import { PreviewClient } from './PreviewClient';
 
-export default async function PreviewPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return notFound();
+export default function PreviewPageWrapper() {
+  const params = useParams();
+  const id = params.id as string;
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { data: doc } = await supabase
-    .from('documents').select('*').eq('id', params.id).eq('user_id', user.id).single();
-  if (!doc) return notFound();
-
-  const permissions = await getUserVipPermissions(user.id);
+  useEffect(() => {
+    fetch(`/api/documents/${id}`)
+      .then(r => r.json())
+      .then(doc => {
+        if (doc.error) {
+          setData({ error: true });
+        } else {
+          setData(doc);
+        }
+      })
+      .catch(() => setData({ error: true }))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   return (
-    <PreviewClient
-      documentId={doc.id}
-      documentName={doc.original_name}
-      status={doc.status}
-      isVip={permissions.isVip}
-      canPreviewFull={permissions.canPreviewFull}
-    />
+    <AuthGuard>
+      {loading ? (
+        <div className="text-center py-20">
+          <div className="animate-spin text-4xl mb-4">⏳</div>
+          <p className="text-gray-500">加载文档...</p>
+        </div>
+      ) : data?.error ? (
+        <div className="text-center py-20">
+          <div className="text-4xl mb-4">📄</div>
+          <p className="text-gray-500">文档不存在或无权访问</p>
+        </div>
+      ) : (
+        <PreviewClient
+          documentId={data?.id || id}
+          documentName={data?.original_name || '文档'}
+          status={data?.status || 'processing'}
+          isVip={false}
+          canPreviewFull={false}
+        />
+      )}
+    </AuthGuard>
   );
 }
